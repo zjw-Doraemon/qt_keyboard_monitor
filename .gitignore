@@ -1,0 +1,54 @@
+# 交换文件（通常由 vim 生成）
+*.swap
+
+# cppcheck 脚本和报告
+*cppcheck*
+*cppchk*
+
+# 先决条件
+*.d
+
+# 编译的目标文件
+*.slo
+*.lo
+*.o
+*.obj
+
+# Protobuf 生成的文件
+*.pb.h
+*.pb.cc
+
+# 预编译头文件
+*.gch
+*.pch
+
+# 编译的动态库
+*.so
+*.dylib
+*.dll
+
+# 编译的静态库
+*.lai
+*.la
+*.a
+*.lib
+
+# Windows 可执行文件
+*.exe
+
+# 用户配置
+*.usr
+*.user
+*.pro.user.*
+*.orig
+*.autosave
+
+# 构建目录
+build*/
+
+# 库
+deploy/
+
+# Protobuf 源文件
+*.pb.h
+*.pb.cc
